@@ -12,7 +12,9 @@ static std::vector<std::string> parse(const std::string& line) {
     std::vector<std::string> args;
     std::istringstream iss(line);
     std::string word;
-    while (iss >> word) args.push_back(word);
+    while (iss >> word){
+	    args.push_back(word);
+    }
     return args;
 }
 
@@ -22,10 +24,21 @@ static bool run_builtin(const std::vector<std::string>& args) {
         std::cout << "Shell exited\n";
         exit(0);
     }
+    
     if (args[0] == "cd") {
-        const char* dir = (args.size() > 1) ? args[1].c_str() : getenv("HOME");
-        if (dir == nullptr || chdir(dir) != 0) perror("cd");
-        return true;
+	const char* dir;
+	if (args.size() > 1){
+    		dir = args[1].c_str();
+	}
+	else{
+    		dir = getenv("HOME");	
+	}
+       
+	if (dir == nullptr || chdir(dir) != 0){
+		perror("cd");
+	}
+        
+	return true;
     }
     return false;
 }
@@ -41,7 +54,9 @@ static void run_external(const std::vector<std::string>& args) {
     if (pid == 0) {
         // Child: build a null-terminated argv and replace this process.
         std::vector<char*> argv;
-        for (const auto& a : args) argv.push_back(const_cast<char*>(a.c_str()));
+	for (size_t i = 0; i < args.size(); i++){
+		argv.push_back(const_cast<char*>(args[i].c_str()));
+	}
         argv.push_back(nullptr);
 
         execvp(argv[0], argv.data());
@@ -66,7 +81,7 @@ int main() {
         }
 
         std::vector<std::string> args = parse(line);
-        if (args.empty()) continue;
+        if (args.empty()) continue;	// equivalent to the user pressing enter with an empty command line
 
         if (run_builtin(args)) continue;
         run_external(args);
